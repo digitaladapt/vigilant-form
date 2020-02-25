@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * This file will be called in the SubmissionController::update().
+ *
+ * This is a chance to announce tentative changes in real-time.
+ *
+ * All exceptions and return values are suppressed and ignored.
+ */
+
+/* use global to access the submission */
+//global $submission;
+
+/* use global to access the new grade */
+//global $grade;
+
+/* use global to access if change was cancelled */
+//global $cancel;
+
+// good time to send an alert, maybe to discord.

@@ -1,0 +1,157 @@
+<?php
+
+return [
+    /* the higher the score, the more likely the content is spam/junk. */
+    /* each rule must contain:
+     * "name" what you want to call this rule,
+     * "score" which determines how many points are given for each volation,
+     * either "fields" or "property" (what data to review),
+     * * "fields" either an array of field names, or true to mean all fields (which also includes the "message" property).
+     * * "property" is a string in the dot "." notation of the desired property "ipAddress.country" "duration", "honeypot", etc.
+     * "check", which must be one of the following:
+     * * "regexp"       ("values" string, no "%" allowed, to make regex work between php/sql there must be a reserved delimiter),
+     * * "not_regexp"   ("values" string, no "%" allowed, to make regex work between php/sql there must be a reserved delimiter),
+     * * "regexp_count_over" ("values" array with regexp string and count, if regexp occurs over count times, the rule is triggered),
+     * * "contains"     ("values" array of strings),
+     * * "ends_with"    ("values" array of strings),
+     * * "is_bool"      ("values" true/false),
+     * * "is_empty"     ("values" *not* required, only counts when field was offered in form, but not filled out),
+     * * "email"        ("values" *not* required, checks email address and performs simple dns mx check),
+     * * "missing"      ("values" array of strings),
+     * * "less_than"    ("values" a string, for property "duration" only),
+     * * "length_under" ("values" number of letters),
+     * * "length_over"  ("values" number of letters),
+     * "values" (except when "check" is "is_empty" or "email") is required and should correspond to the check specified.
+     * 
+     * optionally a "limit" (integer) may be specified, if the rule matches, the maximum score that the form submission can be is the given limit.
+     *
+     * Note: *all* checks performed are case-insensative (including regexp),
+     * also note *all* checks work on utf-8 data (length is characters not bytes),
+     * finally: for all field checks, if the form didn't contain the specified field, the submission can *not* match the rule by that field (ever);
+     * this means that only some forms ask for a field, a rule only applies to submissions from forms which contained that field.
+     *
+     * Example: two forms, both have "email", but only one has "phone", a rule which gives points for a
+     * "missing" "phone" will not give points to any submission from the form without a "phone" field.
+     */
+
+    /* rules to file as ignore ---------------------------------------------- */
+    [
+        'name'   => 'contains explicit words',
+        'score'  => 5000,
+        'fields' => true, /* all fields (including property "message") */
+        'check'  => 'contains',
+        'values' => ['explicit words removed, because that stuff does not belong in my git repo'],
+    ],
+    [
+        'name'   => 'name/org has url',
+        'score'  => 5000,
+        'fields' => ['full_name', 'company'],
+        'check'  => 'contains',
+        'values' => ['http://', 'https://'],
+    ],
+    [
+        'name'   => 'email top-level-domain is .xyz',
+        'score'  => 5000,
+        'fields' => ['email'],
+        'check'  => 'ends_with',
+        'values' => ['.xyz'],
+    ],
+    [
+        'name'   => 'contains html/bb-code links',
+        'score'  => 2500,
+        'fields' => true, /* all fields (including property "message") */
+        'check'  => 'contains',
+        'values' => ['href', '[/url]'],
+    ],
+
+    /* rules to file as junk ------------------------------------------------ */
+    [
+        'name'   => 'name/org has excessive punctuation (injection attack)',
+        'score'  => 500,
+        'fields' => ['full_name', 'company'],
+        'check'  => 'regexp_count_over',
+        'values' => ['[[:punct:]]', 4],
+    ],
+    [
+        'name'   => 'email is invalid',
+        'score'  => 500,
+        'fields' => ['email'],
+        'check'  => 'email',
+    ],
+    [
+        /* see: https://en.wikipedia.org/wiki/North_American_Numbering_Plan */
+        'name'   => 'phone is invalid',
+        'score'  => 500,
+        'fields' => ['phone'],
+        'check'  => 'not_regexp',
+        'values' => '^[2-9][0-9]{2}[2-9][0-9]{6}$',
+    ],
+    [
+        'name'     => 'duration was too fast (under 5 seconds)',
+        'score'    => 500,
+        'property' => 'duration',
+        'check'    => 'less_than',
+        'values'   => '5 seconds',
+    ],
+    [
+        'name'     => 'honeypot failed',
+        'score'    => 500,
+        'property' => 'honeypot',
+        'check'    => 'is_bool',
+        'values'   => true,
+    ],
+    [
+        'name'     => 'device self-identified as robot',
+        'score'    => 500,
+        'property' => 'device',
+        'check'    => 'contains',
+        'values'   => ['robot'],
+    ],
+
+    /* rules to file as review ---------------------------------------------- */
+    [
+        'name'   => 'contains urls',
+        'score'  => 100,
+        'fields' => true, /* all fields (including property "message") */
+        'check'  => 'contains',
+        'values' => ['http://', 'https://'],
+    ],
+    [
+        'name'     => 'ip_address country is not USA',
+        'score'    => 100,
+        'property' => 'ipAddress.country',
+        'check'    => 'missing',
+        'values'   => ['United States'],
+    ],
+    [
+        'name'   => 'a required field was left empty',
+        'score'  => 100,
+        'fields' => ['full_name', 'email'],
+        'check'  => 'is_empty',
+    ],
+
+    /* rules to file as quality --------------------------------------------- */
+    [
+        'name'   => 'a field was left empty',
+        'score'  => 10,
+        'fields' => true, /* all fields (including property "message") */
+        'check'  => 'is_empty',
+    ],
+
+    /* rules which improve the score ---------------------------------------- */
+    [
+        'name'     => '[positive] ip_address country is USA',
+        'score'    => -10,
+        'property' => 'ipAddress.country',
+        'check'    => 'contains',
+        'values'   => ['United States'],
+    ],
+    [
+        'name'     => '[positive] has utm_source',
+        'score'    => -100,
+        'property' => 'hasUtmSource',
+        'check'    => 'is_bool',
+        'values'   => true,
+        'limit'    => 999,
+    ],
+];

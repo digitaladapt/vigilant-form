@@ -1,0 +1,78 @@
+{
+    "name": "digitaladapt/vigilant-form",
+    "type": "project",
+    "description": "VigilantForm for Form Scoring and Processing.",
+    "homepage": "https://github.com/digitaladapt/vigilant-form",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Andrew Stowell",
+            "email": "andrew@digitaladapt.com",
+            "homepage": "https://www.digitaladapt.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2.0",
+        "ext-json": "*",
+        "aws/aws-sdk-php": "^3.133",
+        "erusev/parsedown": "^1.7",
+        "fideloper/proxy": "^4.0",
+        "guzzlehttp/guzzle": "^6.5",
+        "jenssegers/agent": "^2.6",
+        "laravel/framework": "^6.2",
+        "laravel/tinker": "^2.0",
+        "nesbot/carbon": "^2.30"
+    },
+    "require-dev": {
+        "facade/ignition": "^1.4",
+        "fzaninotto/faker": "^1.4",
+        "mockery/mockery": "^1.0",
+        "nunomaduro/collision": "^3.0",
+        "phpunit/phpunit": "^8.0"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "classmap": [
+            "database/seeds",
+            "database/factories"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php -r \"file_exists('scoring.php') || copy('scoring.php.example', 'scoring.php');\"",
+            "@php -r \"file_exists('process/ignore.php')  || copy('process/ignore.php.example',  'process/ignore.php');\"",
+            "@php -r \"file_exists('process/junk.php')    || copy('process/junk.php.example',    'process/junk.php');\"",
+            "@php -r \"file_exists('process/review.php')  || copy('process/review.php.example',  'process/review.php');\"",
+            "@php -r \"file_exists('process/quality.php') || copy('process/quality.php.example', 'process/quality.php');\"",
+            "@php -r \"file_exists('process/perfect.php') || copy('process/perfect.php.example', 'process/perfect.php');\"",
+            "@php -r \"file_exists('process/regrade.php') || copy('process/regrade.php.example', 'process/regrade.php');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ]
+    }
+}

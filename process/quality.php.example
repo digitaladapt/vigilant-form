@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * This file will be called in the ProcessSubmission Job.
+ * This is a convent hook to tie into other systems, or
+ * taking actions, such as sending emails.
+ *
+ * By default the file run will depend on the grade of the submission,
+ * but that can be configured.
+ *
+ * In this case, submissions with the grade of "quality".
+ *
+ * Minimum code is to return true so the Job completes.
+ *
+ * This file should either return true/false or throw an Exception:
+ * * true to indicate the job is done,
+ * * false cancel the job (no more attempts), or
+ * * throw an Exception (to try again later).
+ */
+
+/* use global to access the submission */
+//global $submission;
+
+/* use global to access reprocess (set to true if submissions grade was overridden by user action) */
+//global $reprocess;
+
+/* use global to access details (array which scoring rules applied to the submission, may be empty) */
+//global $details;
+
+return true;
