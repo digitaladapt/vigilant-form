@@ -73,6 +73,9 @@ The API requirements for vigilant-form submissions can be found in app/Http/Requ
 * Anytime you modify any of the scoring or process php files, you should restart your queue `php artisan queue:restart`, otherwise your changes will not be fully realized.
 * Within the database, an IP Address record can be reused across multiple form submissions, to avoid repeatedly looking up the same inforamtion; as a result, the ip field is immutable once set.
 * You should monitor for job failures `php artisan queue:failed` and strongly recommend you setup `LOG_SLACK_WEBHOOK_URL` to have important logs sent to Slack/Discord.
+* Normal form fields are limited to 255 characters; but a special message property exists for holding longer content, any form fields named "comments", "comment", or "message" will fall into the message property; a form submission is limited to just one long message property.
+* Accounts and their fields are a way to tie muliple form submissions to a single person/organization, and store information about submissions on a higher level, but that is business logic suited for the process files, depending on your needs.
+
 
 ### How Processing Works
 By default within the process folder, there is a php file for each grade that can result from grading.
@@ -242,4 +245,32 @@ return [
         'limit'    => 999,
     ],
 ];
+```
+
+## Accounts
+In your processing, if you want to store supplemental information, one place that can be done is at the account level.
+All use of the account and account_fields is left up to you, since it is business specific logic.
+
+For example, after I push quality submissions into my CRM, I get some Account meta data, so I can include that in an Discord chat:
+```php
+global $submission; // quality Submission just pushed into CRM
+$record = ['id' => '<EXTERNAL_UUID>', /* data from CRM, including "id", among other things */ ];
+
+/* find account, so we can store extra information into our database */
+if (!$submission->account) {
+	$account = Account::firstOrCreate(['external_key' => $record['id']]);
+	$submission->account()->associate($account);
+	$submission->save();
+} else {
+	$account = $submission->account;
+}
+
+/* store extra information into our database */
+foreach ($record as $key => $value) {
+	$account->setField($key, $value);
+}
+
+/* mark the submission as externally synced */
+$submission->synced = true;
+$submission->save();
 ```
